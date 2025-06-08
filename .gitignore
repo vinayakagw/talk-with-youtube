@@ -65,3 +65,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 env/
+
+# Temporary session transcript files
+temp_session_transcripts/
