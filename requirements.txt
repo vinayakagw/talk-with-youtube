@@ -1,0 +1,9 @@
+yt-dlp
+requests
+python-dotenv
+azure-storage-file-datalake
+aiofiles
+aiohttp
+Flask[async]
+sounddevice
+scipy
