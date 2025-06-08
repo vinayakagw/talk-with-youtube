@@ -63,15 +63,8 @@ Talk With YouTube is a web application that allows users to interact with YouTub
     ```env
     SARVAM_API_KEY="your_sarvam_ai_api_key"
     FLASK_SECRET_KEY="a_strong_random_secret_key_for_flask_sessions"
-
-    # Azure Data Lake Storage (if using Sarvam Batch STT with Azure upload)
-    AZURE_STORAGE_ACCOUNT_NAME="your_azure_storage_account_name"
-    AZURE_STORAGE_ACCOUNT_KEY="your_azure_storage_account_key"
-    AZURE_STORAGE_FILESYSTEM_NAME="your_azure_storage_filesystem_name"
-    AZURE_STORAGE_UPLOAD_DIRECTORY="uploads" # Or your preferred directory in Azure
     ```
     *   Replace placeholder values with your actual credentials and configurations.
-    *   Note: Some Sarvam AI API URLs and model names are hardcoded in `app/sarvam_ai.py` as per recent project decisions.
 
 ## Running the Application
 
