@@ -4,112 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Video Tutor</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1, h2 { color: #333; }
-        label { display: block; margin-top: 10px; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], textarea { width: 95%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        textarea { height: 100px; resize: vertical; }
-        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
-        button:hover { background-color: #0056b3; }
-        .flash-messages { list-style: none; padding: 0; }
-        .flash-messages li { padding: 10px; margin-bottom: 10px; border-radius: 4px; }
-        .flash-messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .flash-messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .flash-messages .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-        .flash-messages .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .transcript-box, .answer-box { background-color: #e9ecef; padding: 15px; border-radius: 4px; margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; max-height: 300px; overflow-y: auto;}
-        .loader {
-            border: 5px solid #f3f3f3; /* Light grey */
-            border-top: 5px solid #3498db; /* Blue */
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: none; /* Hidden by default */
-            margin-left: 10px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .status-message { margin-top: 5px; font-style: italic; color: #555; }
-
-        /* Chatbot styles */
-        #chatContainer {
-            margin-top: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-        }
-        #chatMessages {
-            height: 300px; /* Adjust as needed */
-            overflow-y: auto;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-        .message {
-            max-width: 70%;
-            padding: 10px 15px;
-            border-radius: 18px;
-            margin-bottom: 10px;
-            line-height: 1.4;
-        }
-        .user-message {
-            background-color: #007bff;
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-        .bot-message {
-            background-color: #e9ecef;
-            color: #333;
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-        .bot-message p, .user-message p {
-            margin: 0 0 5px 0;
-        }
-        .bot-message audio {
-            display: block;
-            margin-top: 8px;
-            max-width: 100%;
-            height: 40px; /* Adjust height for audio player */
-        }
-        #chatInputArea {
-            display: flex;
-            padding: 10px;
-            border-top: 1px solid #ccc;
-            background-color: #fff;
-            border-bottom-left-radius: 8px;
-            border-bottom-right-radius: 8px;
-        }
-        #chatInput {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 18px;
-            margin-right: 10px;
-            resize: none; /* Prevent manual resize, control with rows */
-            height: auto; /* Start with auto height */
-            min-height: 20px; /* Minimum height of one line */
-            max-height: 100px; /* Max height before scrolling within textarea */
-            overflow-y: auto;
-        }
-        #chatInputArea button {
-            padding: 10px 15px; /* Consistent padding */
-            height: fit-content; /* Adjust height to content */
-            align-self: center; /* Vertically align buttons if input grows */
-        }
-        .typing-indicator {
-            font-style: italic;
-            color: #777;
-            padding: 5px 0;
-            align-self: flex-start;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 </head>
 <body>
     <div class="container">
@@ -134,78 +29,80 @@
         </form> <!-- Closing tag for videoProcessForm -->
 
         {% if session.current_transcript %}
-            <h2>Transcript:</h2>
-            <div class="transcript-box">
-                {{ session.current_transcript }}
-            </div>
-
-            <!-- New Chatbot Interface -->
-            <h2>Chat with Tutor:</h2>
-            <div id="chatContainer">
-                <div id="chatMessages">
-                    <!-- Messages will appear here -->
+            <div class="content-wrapper"> <!-- New wrapper for two-column layout -->
+                <div class="transcript-section"> <!-- Wrapper for transcript -->
+                    <h2>Transcript:</h2>
+                    <div class="transcript-box">
+                        {{ session.current_transcript }}
+                    </div>
                 </div>
-                <div id="chatInputArea">
-                    <textarea id="chatInput" name="chat_input" rows="1" placeholder="Type your question or record..."></textarea>
-                    <button id="sendChatMessageButton" title="Send Message">Send</button>
-                    <button id="recordChatMessageButton" title="Record Question (5s)">Record</button>
-                    <div id="chatRecordLoader" class="loader" style="display: none; vertical-align: middle;"></div>
-                </div>
-                <p id="chatRecordStatus" class="status-message" style="padding-left:10px;"></p>
-            </div>
-            <!-- End New Chatbot Interface -->
 
+                <div class="chat-section"> <!-- Wrapper for chat -->
+                    <h2>Chat with Tutor:</h2>
+                    <div id="chatContainer">
+                        <div id="chatMessages">
+                            <!-- Messages will appear here -->
+                        </div>
+                        <div id="chatInputArea">
+                            <textarea id="chatInput" name="chat_input" rows="1" placeholder="Type your question or record..."></textarea>
+                            <button id="sendChatMessageButton" title="Send Message">Send</button>
+                            <button id="recordChatMessageButton" title="Record Question (5s)">Record</button>
+                            <div id="chatRecordLoader" class="loader" style="display: none; vertical-align: middle;"></div>
+                        </div>
+                        <p id="chatRecordStatus" class="status-message" style="padding-left:10px;"></p>
+                    </div>
+                </div>
+            </div> <!-- Closing content-wrapper -->
         {% endif %}
     </div> <!-- Closing container -->
 
     <script>
-        const recordButton = document.getElementById('recordButton');
-        const questionTextarea = document.getElementById('question');
-        const recordLoader = document.getElementById('recordLoader');
-        const recordStatus = document.getElementById('recordStatus');
-        const askButton = document.getElementById('askButton');
+        // This section appears to be for a different/older recording functionality.
+        // IDs 'recordButton' and 'question' are not in the current chat HTML.
+        // If this is unused, consider removing it. For now, alerts are replaced.
+        const recordButtonOld = document.getElementById('recordButton'); // Potentially unused
+        const questionTextareaOld = document.getElementById('question'); // Potentially unused
+        const recordLoaderOld = document.getElementById('recordLoader'); // Potentially unused
+        const recordStatusOld = document.getElementById('recordStatus'); // Potentially unused
+        const askButtonOld = document.getElementById('askButton'); // Potentially unused
 
-        if (recordButton) {
-            recordButton.addEventListener('click', async () => {
-                questionTextarea.value = ''; // Clear previous question
-                recordStatus.textContent = 'Recording... Please speak now.';
-                recordLoader.style.display = 'inline-block';
-                recordButton.disabled = true;
-                askButton.disabled = true;
+        if (recordButtonOld) {
+            recordButtonOld.addEventListener('click', async () => {
+                if(questionTextareaOld) questionTextareaOld.value = ''; 
+                if(recordStatusOld) recordStatusOld.textContent = 'Recording... Please speak now.';
+                if(recordLoaderOld) recordLoaderOld.style.display = 'inline-block';
+                recordButtonOld.disabled = true;
+                if(askButtonOld) askButtonOld.disabled = true;
 
                 try {
                     const response = await fetch("{{ url_for('record_and_transcribe_route') }}", {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json' 
-                            // CSRF token might be needed if you enable CSRF protection globally
+                            'Content-Type': 'application/json'
                         }
                     });
 
-                    recordStatus.textContent = 'Transcribing...';
+                    if(recordStatusOld) recordStatusOld.textContent = 'Transcribing...';
                     const result = await response.json();
 
                     if (response.ok && result.success) {
-                        questionTextarea.value = result.transcript;
-                        recordStatus.textContent = 'Transcription complete. You can now ask the question.';
+                        if(questionTextareaOld) questionTextareaOld.value = result.transcript;
+                        if(recordStatusOld) recordStatusOld.textContent = 'Transcription complete. You can now ask the question.';
                     } else {
-                        questionTextarea.value = '';
-                        recordStatus.textContent = 'Error: ' + (result.error || 'Could not transcribe audio.');
-                        alert('Error: ' + (result.error || 'Could not transcribe audio. Please check console for details.'));
+                        if(questionTextareaOld) questionTextareaOld.value = '';
+                        const errorMsg = 'Error: ' + (result.error || 'Could not transcribe audio.');
+                        if(recordStatusOld) recordStatusOld.textContent = errorMsg;
+                        console.error(errorMsg); // Log to console instead of alert
                     }
                 } catch (error) {
-                    questionTextarea.value = '';
-                    recordStatus.textContent = 'Error: Could not connect to the server for recording/transcription.';
-                    console.error('Recording/Transcription Error:', error);
-                    alert('Error: Could not connect to the server. Please check console.');
+                    if(questionTextareaOld) questionTextareaOld.value = '';
+                    const errorMsg = 'Error: Could not connect to the server for recording/transcription.';
+                    if(recordStatusOld) recordStatusOld.textContent = errorMsg;
+                    console.error('Recording/Transcription Error (Old):', error); // Log to console instead of alert
                 } finally {
-                    recordLoader.style.display = 'none';
-                    recordButton.disabled = false;
-                    askButton.disabled = false;
-                    // If you want to auto-submit after successful transcription:
-                    // if (questionTextarea.value) {
-                    //     document.getElementById('questionForm').submit();
-                    // }
+                    if(recordLoaderOld) recordLoaderOld.style.display = 'none';
+                    recordButtonOld.disabled = false;
+                    if(askButtonOld) askButtonOld.disabled = false;
                 }
             });
         }
@@ -239,6 +136,7 @@
         const recordChatMessageButton = document.getElementById('recordChatMessageButton');
         const chatRecordLoader = document.getElementById('chatRecordLoader');
         const chatRecordStatus = document.getElementById('chatRecordStatus');
+        const originalRecordButtonText = recordChatMessageButton ? recordChatMessageButton.textContent : 'Record';
 
         function addMessageToChat(text, sender, audioUrl = null) {
             if (!chatMessages) return;
@@ -341,27 +239,34 @@
         }
         
         if (recordChatMessageButton) {
+            const originalButtonText = recordChatMessageButton.textContent;
+            const originalButtonBg = recordChatMessageButton.style.backgroundColor;
+
             recordChatMessageButton.addEventListener('click', async () => {
-                if (chatRecordStatus) chatRecordStatus.textContent = 'Recording...';
+                if (chatRecordStatus) chatRecordStatus.textContent = 'Initializing...';
                 if (chatRecordLoader) chatRecordLoader.style.display = 'inline-block';
                 recordChatMessageButton.disabled = true;
-                sendChatMessageButton.disabled = true;
+                recordChatMessageButton.textContent = 'Recording...';
+                recordChatMessageButton.style.backgroundColor = '#dc3545'; // Red color for recording
+                if (sendChatMessageButton) sendChatMessageButton.disabled = true;
 
                 try {
+                    if (chatRecordStatus) chatRecordStatus.textContent = 'Recording (max 5s)...';
                     const response = await fetch("{{ url_for('record_and_transcribe_route') }}", {
                         method: 'POST'
                     });
                     
+                    recordChatMessageButton.textContent = 'Transcribing...';
+                    recordChatMessageButton.style.backgroundColor = '#ffc107'; // Yellow for transcribing
+
                     if (chatRecordStatus) chatRecordStatus.textContent = 'Transcribing...';
                     const result = await response.json();
 
                     if (response.ok && result.success && result.transcript) {
                         if (chatRecordStatus) chatRecordStatus.textContent = 'Transcription complete.';
-                        // Instead of putting in chatInput, directly send it
-                        addMessageToChat(result.transcript, 'user'); // Show user's recorded question
-                        showTypingIndicator(true); // Show bot thinking before sending
+                        addMessageToChat(result.transcript, 'user'); 
+                        showTypingIndicator(true); 
                         
-                        // Now send this transcript as a question
                         const chatResponse = await fetch("{{ url_for('ask_chat') }}", {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -376,20 +281,29 @@
                         }
 
                     } else {
-                        if (chatRecordStatus) chatRecordStatus.textContent = 'Error: ' + (result.error || 'Could not transcribe.');
-                        addMessageToChat('Voice transcription failed. Please try typing.', 'bot');
+                        const errorMsg = 'Error: ' + (result.error || 'Could not transcribe.');
+                        if (chatRecordStatus) chatRecordStatus.textContent = errorMsg;
+                        addMessageToChat('Voice transcription failed. Please try typing or check microphone permissions.', 'bot');
+                        console.error("Transcription error:", result.error);
                     }
                 } catch (error) {
                     console.error('Recording/Transcription for chat Error:', error);
-                    if (chatRecordStatus) chatRecordStatus.textContent = 'Error during recording/transcription.';
-                    addMessageToChat('Error with voice input. Please try typing.', 'bot');
+                    const errorMsg = 'Error during recording/transcription. Check console and mic permissions.';
+                    if (chatRecordStatus) chatRecordStatus.textContent = errorMsg;
+                    addMessageToChat('Error with voice input. Please try typing or check microphone permissions.', 'bot');
                 } finally {
                     if (chatRecordLoader) chatRecordLoader.style.display = 'none';
-                    if (chatRecordStatus && (chatRecordStatus.textContent.startsWith('Recording') || chatRecordStatus.textContent.startsWith('Transcribing'))) {
-                         setTimeout(() => { chatRecordStatus.textContent = ''; }, 3000); // Clear status after a while
+                    recordChatMessageButton.textContent = originalButtonText; // Restore original text
+                    recordChatMessageButton.style.backgroundColor = originalButtonBg; // Restore original background
+                    if (chatRecordStatus && (chatRecordStatus.textContent.includes('Recording') || chatRecordStatus.textContent.includes('Transcribing') || chatRecordStatus.textContent.includes('Initializing'))) {
+                         setTimeout(() => { if (chatRecordStatus) chatRecordStatus.textContent = ''; }, 4000); 
+                    } else if (chatRecordStatus && chatRecordStatus.textContent.includes('Error')) {
+                        setTimeout(() => { if (chatRecordStatus) chatRecordStatus.textContent = ''; }, 5000);
+                    } else {
+                         if (chatRecordStatus) chatRecordStatus.textContent = ''; // Clear other messages sooner
                     }
                     recordChatMessageButton.disabled = false;
-                    sendChatMessageButton.disabled = false;
+                    if (sendChatMessageButton) sendChatMessageButton.disabled = false;
                 }
             });
         }
