@@ -7,4 +7,3 @@ aiohttp
 Flask[async]
 sounddevice
 scipy
-gunicorn
