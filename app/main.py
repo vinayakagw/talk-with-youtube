@@ -61,10 +61,10 @@ async def index():
             # Reset any previous conversation when processing a new video
             session['conversation_history'] = []
             
-            # Download the YouTube video's audio
-            audio_file = await download_youtube_audio(
-                video_url=youtube_url,
-                output_path=AUDIO_OUTPUT_DIR
+            # REMOVE await - download_youtube_audio is not an async function
+            audio_file = download_youtube_audio(
+                video_url=youtube_url,  # This parameter name is correct
+                output_path=AUDIO_OUTPUT_DIR  # This matches the function parameter
             )
             
             if not audio_file:
