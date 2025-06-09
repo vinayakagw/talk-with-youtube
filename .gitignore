@@ -68,3 +68,5 @@ env/
 
 # Temporary session transcript files
 temp_session_transcripts/
+
+user_audio_questions/

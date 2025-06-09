@@ -225,14 +225,25 @@ button:disabled {
     align-self: center; /* Keep centered */
     /* Consider icon buttons for send/record for a cleaner look */
 }
-#sendChatMessageButton {
-    /* background-color: #1877f2; /* Already set by general button style */
-}
+
 #recordChatMessageButton {
     background-color: #6c757d; /* Secondary color for record */
 }
 #recordChatMessageButton:hover {
     background-color: #5a6268;
+}
+
+/* Recording timer styling */
+#recordingTimer {
+    color: #dc3545;
+    font-family: monospace;
+    font-size: 1.2em;
+}
+
+/* Recording button styles for active state */
+#recordChatMessageButton.recording {
+    background-color: #dc3545;
+    color: white;
 }
 
 
@@ -289,10 +300,6 @@ button:disabled {
     max-height: 450px; /* Allow more height for transcript if available */
 }
 
-#chatMessages {
-    /* height: 400px; /* Let flexbox determine height */
-}
-
 /* Responsive considerations */
 @media (max-width: 992px) { /* Adjust breakpoint for two columns */
     .chat-section {
@@ -313,11 +320,6 @@ button:disabled {
     .transcript-section, .chat-section {
         flex-basis: 100%;
         margin-bottom: 0; /* Gap handles spacing */
-    }
-    #chatMessages {
-        /* Consider a fixed height on mobile if flex doesn't behave as expected,
-           or ensure .chat-section has a defined height or min-height.
-           For now, relying on flex-grow within a flex column. */
     }
     .message {
         max-width: 85%; /* Allow messages to be a bit wider on mobile */
