@@ -27,46 +27,72 @@
         <!-- Form for submitting YouTube URL to process -->
         <form method="POST" action="{{ url_for('index') }}" id="videoProcessForm">
             <label for="youtube_url">YouTube Video URL:</label>
-            <input type="text" id="youtube_url" name="youtube_url"
-                value="{{ session.current_youtube_url if session.current_youtube_url else '' }}" required>
-            <button type="submit" id="processVideoButton">Process Video</button>
-            <!-- Loading indicator and status message when processing video -->
-            <div id="videoProcessLoader" class="loader" style="display: none; vertical-align: middle;"></div>
+            <div class="url-input-group">
+                <input type="text" id="youtube_url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=..." required>
+                <button type="submit" id="processVideoButton">Process Video</button>
+                <div id="videoProcessLoader" class="loader" style="display: none;"></div>
+            </div>
             <p id="videoProcessStatus" class="status-message"></p>
         </form>
 
         <!-- Content displayed after a video has been processed -->
         {% if session.current_transcript %}
-        <div class="content-wrapper"> <!-- Two-column layout container -->
-            <!-- Left column: Video transcript -->
+        <div class="content-wrapper">
+            <!-- Left column: Transcript display -->
             <div class="transcript-section">
-                <h2>Transcript:</h2>
+                <h2>Video Transcript:</h2>
                 <div class="transcript-box">
-                    {{ session.current_transcript }}
+                    {{ session.current_transcript|safe }}
                 </div>
             </div>
 
             <!-- Right column: Chat interface -->
             <div class="chat-section">
                 <h2>Chat with Tutor:</h2>
+                
+                <!-- Add mode selector -->
+                <div class="mode-selector">
+                    <button id="textModeButton" class="mode-button active">Text Chat</button>
+                    <button id="voiceModeButton" class="mode-button">Voice Chat</button>
+                </div>
+                
                 <div id="chatContainer">
-                    <!-- Chat messages display area -->
+                    <!-- Chat messages display area - common for both modes -->
                     <div id="chatMessages">
+                        <!-- Initial welcome message that changes based on mode -->
+                        <div class="message bot-message" id="welcomeMessage">
+                            <p>Hi there! I'm your YouTube video tutor. I can answer questions about this video. What would you like to know?</p>
+                        </div>
                         <!-- Messages will appear here dynamically -->
                     </div>
-                    <!-- Input area for sending questions -->
-                    <div id="chatInputArea">
-                        <textarea id="chatInput" name="chat_input" rows="1"
-                            placeholder="Type your question or record..."></textarea>
-                        <button id="sendChatMessageButton" title="Send Message">Send</button>
-                        <button id="recordChatMessageButton" title="Start Recording (up to 60s)">Record</button>
-                        <!-- Recording timer display -->
-                        <span id="recordingTimer" style="display: none; margin-left: 10px; font-weight: bold;"></span>
-                        <!-- Loading indicator while recording/processing -->
-                        <div id="chatRecordLoader" class="loader" style="display: none; vertical-align: middle;"></div>
+                    
+                    <!-- Loading/typing indicator -->
+                    <div class="typing-indicator" style="display: none;">
+                        <span></span>
+                        <span></span>
+                        <span></span>
                     </div>
-                    <!-- Status messages for recording process -->
-                    <p id="chatRecordStatus" class="status-message" style="padding-left:10px;"></p>
+                    
+                    <!-- Text Chat Mode Interface -->
+                    <div id="textChatInterface" class="chat-interface">
+                        <div id="chatInputArea">
+                            <textarea id="chatInput" name="chat_input" rows="1" placeholder="Type your question about the video..."></textarea>
+                            <button id="sendChatMessageButton" title="Send Message">Send</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Voice Chat Mode Interface -->
+                    <div id="voiceChatInterface" class="chat-interface" style="display:none;">
+                        <div id="voiceChatInputArea">
+                            <button id="recordChatMessageButton" title="Start Recording (up to 60s)">Record Voice</button>
+                            <!-- Recording timer display -->
+                            <span id="recordingTimer" style="display: none; margin-left: 10px; font-weight: bold;"></span>
+                            <!-- Loading indicator while recording/processing -->
+                            <div id="chatRecordLoader" class="loader" style="display: none; vertical-align: middle;"></div>
+                        </div>
+                        <!-- Status messages for recording process -->
+                        <p id="chatRecordStatus" class="status-message"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -75,102 +101,106 @@
 
     <script>
         // --- VIDEO PROCESSING FUNCTIONALITY ---
-        // Get references to video processing elements
         const videoProcessForm = document.getElementById('videoProcessForm');
         const videoProcessButton = document.getElementById('processVideoButton');
         const videoProcessLoader = document.getElementById('videoProcessLoader');
         const videoProcessStatus = document.getElementById('videoProcessStatus');
 
-        // Add event listener to handle video URL submission
         if (videoProcessForm) {
-            videoProcessForm.addEventListener('submit', (event) => {
-                const youtubeUrlInput = document.getElementById('youtube_url');
-                if (!youtubeUrlInput || !youtubeUrlInput.value.trim()) {
-                    // Basic client-side validation, though 'required' handles most.
-                    if (videoProcessStatus) videoProcessStatus.textContent = 'Please enter a YouTube Video URL.';
-                    event.preventDefault(); // Stop form submission
-                    return;
-                }
-                // Show loading indicator and status message
-                if (videoProcessLoader) videoProcessLoader.style.display = 'inline-block';
-                if (videoProcessStatus) videoProcessStatus.textContent = 'Processing video... Please wait. The page will reload.';
-                if (videoProcessButton) videoProcessButton.disabled = true;
-                // Allow form submission to proceed. The page will reload.
+            videoProcessForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const youtubeUrl = document.getElementById('youtube_url').value.trim();
+                if (!youtubeUrl) return;
+                
+                // Show loading indicator and disable button
+                videoProcessButton.disabled = true;
+                videoProcessLoader.style.display = 'inline-block';
+                videoProcessStatus.textContent = 'Processing video. This may take a few minutes...';
+                
+                // Submit the form
+                this.submit();
             });
         }
 
         // --- CHAT INTERFACE FUNCTIONALITY ---
-        // Get references to chat interface elements
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
         const sendChatMessageButton = document.getElementById('sendChatMessageButton');
         const recordChatMessageButton = document.getElementById('recordChatMessageButton');
         const chatRecordLoader = document.getElementById('chatRecordLoader');
         const chatRecordStatus = document.getElementById('chatRecordStatus');
-        const originalRecordButtonText = recordChatMessageButton ? recordChatMessageButton.textContent : 'Record';
-
-        /**
-         * Adds a new message to the chat display
-         * @param {string} text - The message text content
-         * @param {string} sender - Either 'user' or 'bot' to determine styling
-         * @param {string|null} audioUrl - URL to audio file for bot responses (optional)
-         */
+        const recordingTimer = document.getElementById('recordingTimer');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const typingIndicator = document.querySelector('.typing-indicator');
+        
+        // Function to add a message to the chat
         function addMessageToChat(text, sender, audioUrl = null) {
-            if (!chatMessages) return;
-            // Create message container
             const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
-
-            // Add text content
-            const textParagraph = document.createElement('p');
-            textParagraph.textContent = text;
-            messageDiv.appendChild(textParagraph);
-
-            // Add audio player for bot messages with TTS
-            if (sender === 'bot' && audioUrl) {
+            messageDiv.className = `message ${sender}-message`;
+            
+            // Parse markdown formatting (bold, italics, etc.)
+            function parseMarkdown(text) {
+                if (!text) return '';
+                
+                // Convert **text** to <strong>text</strong> (bold)
+                let parsed = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                // Convert *text* to <em>text</em> (italics)
+                parsed = parsed.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                
+                // Convert `code` to <code>code</code> (inline code)
+                parsed = parsed.replace(/`([^`]+)`/g, '<code>$1</code>');
+                
+                return parsed;
+            }
+            
+            // Format text with paragraphs and parse markdown
+            const paragraphs = text.split('\n\n');
+            const formattedHtml = paragraphs.map(para => 
+                `<p>${parseMarkdown(para)}</p>`
+            ).join('');
+            
+            messageDiv.innerHTML = formattedHtml;
+            
+            // Add audio player if available
+            if (audioUrl) {
                 const audioPlayer = document.createElement('audio');
                 audioPlayer.controls = true;
-                audioPlayer.autoplay = true; // Autoplay bot's spoken answer
-                const sourceElement = document.createElement('source');
-                sourceElement.src = audioUrl;
-                sourceElement.type = 'audio/wav';
-                audioPlayer.appendChild(sourceElement);
-                audioPlayer.insertAdjacentText('beforeend', 'Your browser does not support the audio element.');
+                audioPlayer.src = audioUrl;
+                audioPlayer.style.width = '100%';
+                audioPlayer.style.marginTop = '8px';
                 messageDiv.appendChild(audioPlayer);
+                
+                // Auto-play in voice mode
+                if (voiceModeButton && voiceModeButton.classList.contains('active')) {
+                    audioPlayer.addEventListener('canplaythrough', () => {
+                        audioPlayer.play().catch(e => console.log('Auto-play prevented:', e));
+                    });
+                }
             }
-
-            // Add message to chat and scroll to bottom
+            
+            // Add to chat and scroll to bottom
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Adjust welcome message based on conversation mode
+            if (welcomeMessage) {
+                welcomeMessage.style.display = 'none';
+            }
         }
-
-        /**
-         * Shows or hides the "Tutor is thinking..." indicator
-         * @param {boolean} show - Whether to show or hide the indicator
-         */
+        
+        // Function to show/hide typing indicator
         function showTypingIndicator(show) {
-            let typingIndicator = document.getElementById('typingIndicator');
-            if (show) {
-                // Create indicator if it doesn't exist
-                if (!typingIndicator) {
-                    typingIndicator = document.createElement('div');
-                    typingIndicator.id = 'typingIndicator';
-                    typingIndicator.classList.add('message', 'bot-message', 'typing-indicator');
-                    typingIndicator.textContent = 'Tutor is thinking...';
-                    chatMessages.appendChild(typingIndicator);
+            if (typingIndicator) {
+                typingIndicator.style.display = show ? 'flex' : 'none';
+                if (show && chatMessages) {
                     chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
-            } else {
-                // Remove indicator if it exists
-                if (typingIndicator) {
-                    typingIndicator.remove();
                 }
             }
         }
-
-        /**
-         * Handles sending a text message from the input field
-         */
+        
+        // Handle sending text message
         async function handleSendMessage() {
             if (!chatInput) return;
             const questionText = chatInput.value.trim();
@@ -186,16 +216,19 @@
             // Show thinking indicator and disable buttons
             showTypingIndicator(true);
             sendChatMessageButton.disabled = true;
-            recordChatMessageButton.disabled = true;
+            if (recordChatMessageButton) recordChatMessageButton.disabled = true;
 
             try {
-                // Send question to backend API
+                // Send question to backend API with current mode
                 const response = await fetch("{{ url_for('ask_chat') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ question: questionText })
+                    body: JSON.stringify({ 
+                        question: questionText,
+                        mode: voiceModeButton && voiceModeButton.classList.contains('active') ? 'voice' : 'text'
+                    })
                 });
 
                 // Hide thinking indicator
@@ -205,6 +238,18 @@
                 // Display response or error
                 if (response.ok && result.success) {
                     addMessageToChat(result.answer_text, 'bot', result.answer_audio_url);
+                    
+                    // Store conversation history in local storage as backup
+                    if (result.conversation_history) {
+                        localStorage.setItem('conversationHistory', JSON.stringify(result.conversation_history));
+                    }
+                    
+                    // If in voice mode, auto-play the response and prepare for next input
+                    if (voiceModeButton && voiceModeButton.classList.contains('active') && result.answer_audio_url) {
+                        setTimeout(() => {
+                            if (chatRecordStatus) chatRecordStatus.textContent = 'When ready, click Record to continue the conversation';
+                        }, 1000);
+                    }
                 } else {
                     addMessageToChat(result.error || 'Sorry, I encountered an error.', 'bot');
                 }
@@ -215,40 +260,42 @@
             } finally {
                 // Re-enable buttons
                 sendChatMessageButton.disabled = false;
-                recordChatMessageButton.disabled = false;
+                if (recordChatMessageButton) recordChatMessageButton.disabled = false;
             }
         }
-
-        // Add click event for send button
-        if (sendChatMessageButton) {
-            sendChatMessageButton.addEventListener('click', handleSendMessage);
-        }
-
-        // Configure chat input behavior
+        
+        // Add event listeners for text chat
         if (chatInput) {
-            // Send message on Enter (but allow Shift+Enter for new lines)
-            chatInput.addEventListener('keypress', (event) => {
+            chatInput.addEventListener('keypress', function(event) {
                 if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault(); // Prevent new line on Enter
+                    event.preventDefault();
                     handleSendMessage();
                 }
             });
-
-            // Auto-resize textarea height as content grows
-            chatInput.addEventListener('input', () => {
-                chatInput.style.height = 'auto';
-                chatInput.style.height = (chatInput.scrollHeight) + 'px';
+            
+            // Auto-resize textarea as user types
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
             });
         }
-
-        // Configure voice recording functionality
+        
+        if (sendChatMessageButton) {
+            sendChatMessageButton.addEventListener('click', handleSendMessage);
+        }
+        
+        // --- RECORDING FUNCTIONALITY ---
+        // Add these variables at the top of your script section
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let audioStream = null;
+        
+        // Replace the existing recordChatMessageButton click handler with this one
         if (recordChatMessageButton) {
             const originalButtonText = recordChatMessageButton.textContent;
-            const originalButtonBg = recordChatMessageButton.style.backgroundColor;
-            let recordingTimer = document.getElementById('recordingTimer');
+            let isRecording = false;
             let recordingInterval;
             let recordingStartTime;
-            let isRecording = false;
 
             recordChatMessageButton.addEventListener('click', async () => {
                 // If already recording, stop the recording
@@ -263,16 +310,38 @@
 
                     // Update UI for transcription phase
                     recordChatMessageButton.textContent = 'Transcribing...';
-                    recordChatMessageButton.style.backgroundColor = '#ffc107'; // Yellow for transcribing
+                    recordChatMessageButton.classList.remove('recording');
                     if (recordingTimer) recordingTimer.style.display = 'none';
                     if (chatRecordStatus) chatRecordStatus.textContent = 'Transcribing...';
+                    if (chatRecordLoader) chatRecordLoader.style.display = 'inline-block';
 
                     try {
-                        // Send the recorded audio duration to the backend
+                        // Stop the media recorder and tracks
+                        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                            mediaRecorder.stop();
+                        }
+                        
+                        // Stop all microphone tracks
+                        if (audioStream) {
+                            audioStream.getTracks().forEach(track => track.stop());
+                            audioStream = null;
+                        }
+                        
+                        // Wait for the final audio data
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Create a Blob from the recorded audio chunks
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        
+                        // Create a FormData object to send the audio file
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'recording.wav');
+                        formData.append('duration', actualDuration.toString());
+
+                        // Send the recorded audio to the server
                         const response = await fetch("{{ url_for('record_and_transcribe_route') }}", {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ duration: actualDuration })
+                            body: formData
                         });
 
                         const result = await response.json();
@@ -283,17 +352,19 @@
                             
                             // Reset recording UI
                             recordChatMessageButton.textContent = originalButtonText;
-                            recordChatMessageButton.style.backgroundColor = originalButtonBg;
                             
                             // Show that we're waiting for AI response
                             showTypingIndicator(true);
                             
                             try {
-                                // Send transcript to AI for answer
+                                // Send transcript to AI for answer, specifying voice mode
                                 const aiResponse = await fetch("{{ url_for('ask_chat') }}", {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ question: result.transcript })
+                                    body: JSON.stringify({ 
+                                        question: result.transcript,
+                                        mode: 'voice'  // Always specify voice mode here
+                                    })
                                 });
                                 
                                 const aiResult = await aiResponse.json();
@@ -304,6 +375,18 @@
                                 // Show AI response
                                 if (aiResponse.ok && aiResult.success) {
                                     addMessageToChat(aiResult.answer_text, 'bot', aiResult.answer_audio_url);
+                                    
+                                    // Store conversation history
+                                    if (aiResult.conversation_history) {
+                                        localStorage.setItem('conversationHistory', JSON.stringify(aiResult.conversation_history));
+                                    }
+                                    
+                                    // After response, add a prompt for continuing the conversation
+                                    setTimeout(() => {
+                                        if (chatRecordStatus) {
+                                            chatRecordStatus.textContent = 'Click Record to continue the conversation';
+                                        }
+                                    }, 1000);
                                 } else {
                                     addMessageToChat(aiResult.error || 'Sorry, I had trouble understanding that.', 'bot');
                                 }
@@ -323,15 +406,12 @@
                     } finally {
                         // Always reset UI regardless of success/failure
                         recordChatMessageButton.textContent = originalButtonText;
-                        recordChatMessageButton.style.backgroundColor = originalButtonBg;
+                        recordChatMessageButton.classList.remove('recording');
                         if (recordingTimer) recordingTimer.style.display = 'none';
                         if (chatRecordLoader) chatRecordLoader.style.display = 'none';
-                        if (sendChatMessageButton) sendChatMessageButton.disabled = false;
                         
-                        // Clear status message after a delay
-                        setTimeout(() => {
-                            if (chatRecordStatus) chatRecordStatus.textContent = '';
-                        }, 5000);
+                        // Reset audio recording variables
+                        audioChunks = [];
                     }
 
                     return;
@@ -339,14 +419,32 @@
 
                 // Starting a new recording
                 // Show initialization status
-                if (chatRecordStatus) chatRecordStatus.textContent = 'Initializing...';
+                if (chatRecordStatus) chatRecordStatus.textContent = 'Initializing microphone...';
                 if (chatRecordLoader) chatRecordLoader.style.display = 'inline-block';
 
                 try {
+                    // Request microphone access
+                    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // Initialize the MediaRecorder
+                    mediaRecorder = new MediaRecorder(audioStream);
+                    
+                    // Clear previous audio chunks
+                    audioChunks = [];
+                    
+                    // Set up event handlers for the MediaRecorder
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+                    
+                    // Start recording
+                    mediaRecorder.start();
+                    
                     // Change button to "Stop Recording"
                     recordChatMessageButton.textContent = 'Stop Recording';
-                    recordChatMessageButton.style.backgroundColor = '#dc3545'; // Red color for recording
-                    if (sendChatMessageButton) sendChatMessageButton.disabled = true;
+                    recordChatMessageButton.classList.add('recording');
 
                     // Initialize the timer display
                     recordingStartTime = new Date();
@@ -380,12 +478,75 @@
                     isRecording = false;
                     clearInterval(recordingInterval);
                     if (recordingTimer) recordingTimer.style.display = 'none';
-                    if (chatRecordStatus) chatRecordStatus.textContent = 'Error starting recording';
+                    if (chatRecordStatus) {
+                        if (error.name === 'NotAllowedError') {
+                            chatRecordStatus.textContent = 'Microphone access denied. Please allow microphone access and try again.';
+                        } else {
+                            chatRecordStatus.textContent = 'Error starting recording. Please check your microphone.';
+                        }
+                    }
                     recordChatMessageButton.textContent = originalButtonText;
-                    recordChatMessageButton.style.backgroundColor = originalButtonBg;
-                    if (sendChatMessageButton) sendChatMessageButton.disabled = false;
+                    recordChatMessageButton.classList.remove('recording');
+                    if (chatRecordLoader) chatRecordLoader.style.display = 'none';
                 }
             });
+        }
+        
+        // --- MODE SWITCHING FUNCTIONALITY ---
+        const textModeButton = document.getElementById('textModeButton');
+        const voiceModeButton = document.getElementById('voiceModeButton');
+        const textChatInterface = document.getElementById('textChatInterface');
+        const voiceChatInterface = document.getElementById('voiceChatInterface');
+
+        function switchMode(mode) {
+            if (mode === 'text') {
+                if (textModeButton) textModeButton.classList.add('active');
+                if (voiceModeButton) voiceModeButton.classList.remove('active');
+                if (textChatInterface) textChatInterface.style.display = 'block';
+                if (voiceChatInterface) voiceChatInterface.style.display = 'none';
+                
+                // Change welcome message for text mode
+                if (welcomeMessage && welcomeMessage.querySelector('p')) {
+                    welcomeMessage.querySelector('p').textContent = 'Hi there! I\'m your YouTube video tutor. Ask me anything about this video by typing your questions below.';
+                }
+                
+                // Clear any voice mode prompts
+                if (chatRecordStatus) chatRecordStatus.textContent = '';
+                
+                // Change input placeholder
+                if (chatInput) chatInput.placeholder = "Type your question about the video...";
+                
+                // Save preference
+                localStorage.setItem('preferredChatMode', 'text');
+            } else if (mode === 'voice') {
+                if (textModeButton) textModeButton.classList.remove('active');
+                if (voiceModeButton) voiceModeButton.classList.add('active');
+                if (textChatInterface) textChatInterface.style.display = 'none';
+                if (voiceChatInterface) voiceChatInterface.style.display = 'block';
+                
+                // Change welcome message for voice mode
+                if (welcomeMessage && welcomeMessage.querySelector('p')) {
+                    welcomeMessage.querySelector('p').textContent = 'Hi there! I\'m your YouTube video tutor. Let\'s have a conversation about this video. Click the Record button and speak your question.';
+                }
+                
+                // Add conversational prompt
+                if (chatRecordStatus) {
+                    chatRecordStatus.textContent = "Click Record and speak naturally to have a conversation about the video";
+                }
+                
+                // Save preference
+                localStorage.setItem('preferredChatMode', 'voice');
+            }
+        }
+        
+        // Add event listeners to mode buttons
+        if (textModeButton && voiceModeButton) {
+            textModeButton.addEventListener('click', () => switchMode('text'));
+            voiceModeButton.addEventListener('click', () => switchMode('voice'));
+            
+            // Load saved preference (or default to text)
+            const savedMode = localStorage.getItem('preferredChatMode') || 'text';
+            switchMode(savedMode);
         }
     </script>
 </body>

@@ -383,13 +383,14 @@ async def transcribe_audio_sarvam_batch(audio_file_path: str) -> str | None:
 
 
 # --- Question Answering with LLM ---
-def get_answer_from_transcript_sarvam(transcript: str, question: str) -> str | None:
+def get_answer_from_transcript_sarvam(transcript: str, question: str, conversation_history=None) -> str | None:
     """
     Get an answer to a question about the transcript using Sarvam AI's language model.
     
     Args:
         transcript: The full transcript text
         question: The question to answer
+        conversation_history: Previous messages in the conversation (optional)
         
     Returns:
         The AI-generated answer, or None if the request failed
@@ -403,17 +404,36 @@ def get_answer_from_transcript_sarvam(transcript: str, question: str) -> str | N
         "Content-Type": "application/json",
     }
 
-    # Tell the AI to answer based only on the transcript content
-    system_prompt = "You are a helpful assistant. Your task is to answer questions based ONLY on the provided transcript. If the answer cannot be found in the transcript, say 'The answer is not found in the transcript.'"
-    user_content = f"Transcript:\n\"\"\"\n{transcript}\n\"\"\"\n\nQuestion: {question}"
+    # Include transcript in the system message to avoid multiple system messages
+    system_content = """You are a helpful and friendly video tutor assistant. Your task is to have a natural conversation 
+    about the video transcript provided. Answer questions based ONLY on the transcript content. 
+    If the answer cannot be found in the transcript, say 'I don't see information about that in the video.'
+    Keep your tone friendly, engaging and conversational.
+
+    Here is the video transcript:
+    """
+    
+    system_content += f"\"\"\"\n{transcript}\n\"\"\"\n"
+    
+    # Start with just one system message containing both instructions and transcript
+    messages = [{"role": "system", "content": system_content}]
+    
+    # If no history or new conversation, just add the question
+    if not conversation_history or len(conversation_history) == 0:
+        messages.append({"role": "user", "content": question})
+    else:
+        # Add conversation history (up to the last 6 messages to keep context focused)
+        history_to_include = conversation_history[-6:] if len(conversation_history) > 6 else conversation_history
+        messages.extend(history_to_include)
+        
+        # Make sure the last message is the current question if not already included
+        if history_to_include and history_to_include[-1]["role"] != "user":
+            messages.append({"role": "user", "content": question})
 
     # Format the request for the AI model
     payload = {
         "model": SARVAM_LLM_MODEL_NAME,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content}
-        ],
+        "messages": messages,
     }
 
     try:
@@ -520,7 +540,9 @@ def transcribe_audio_direct(audio_file_path: str, language: str = "en") -> str |
 
 
 # --- Text-to-Speech (Voice Generation) ---
-def text_to_speech_sarvam(text_to_speak: str, output_audio_path: str = "generated_speech", output_filename: str = "response.wav", language_code: str = "en-IN") -> str | None:
+def text_to_speech_sarvam(text_to_speak: str, output_audio_path: str = "generated_speech", 
+                         output_filename: str = "response.wav", language_code: str = "en-IN",
+                         voice_style: str = "neutral") -> str | None:
     """
     Convert text to spoken audio using Sarvam AI's TTS service.
     
@@ -529,6 +551,7 @@ def text_to_speech_sarvam(text_to_speak: str, output_audio_path: str = "generate
         output_audio_path: Directory to save the audio file
         output_filename: Name of the output audio file
         language_code: Language code (e.g., "en-IN" for Indian English)
+        voice_style: Style of voice (e.g., "neutral", "conversational")
         
     Returns:
         Path to the generated audio file, or None if TTS fails
@@ -555,6 +578,8 @@ def text_to_speech_sarvam(text_to_speak: str, output_audio_path: str = "generate
     payload = {
         "text": text_to_speak,
         "target_language_code": language_code,
+        # Add voice_style if your API supports it
+        # "voice_style": voice_style
     }
 
     # We'll save audio segments here temporarily
