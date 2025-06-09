@@ -69,7 +69,7 @@ Talk With YouTube is a full-stack application that downloads audio from YouTube 
     ```
 
 4.  **Set up Environment Variables:**
-    Create a `.env` file in the project root directory (`/Users/vinayakagarwal/Desktop/talk-with-youtube/.env`).
+    Create a `.env` file in the project root directory.
     Add the following required variables:
 
     ```env
