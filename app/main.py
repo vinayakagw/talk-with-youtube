@@ -63,8 +63,8 @@ async def index():
             
             # Download the YouTube video's audio
             audio_file = await download_youtube_audio(
-                youtube_url=youtube_url,
-                output_dir=AUDIO_OUTPUT_DIR
+                video_url=youtube_url,
+                output_path=AUDIO_OUTPUT_DIR
             )
             
             if not audio_file:
