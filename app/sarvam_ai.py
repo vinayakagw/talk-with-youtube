@@ -405,10 +405,16 @@ def get_answer_from_transcript_sarvam(transcript: str, question: str, conversati
     }
 
     # Include transcript in the system message to avoid multiple system messages
-    system_content = """You are a helpful and friendly video tutor assistant. Your task is to have a natural conversation 
-    about the video transcript provided. Answer questions based ONLY on the transcript content. 
-    If the answer cannot be found in the transcript, say 'I don't see information about that in the video.'
-    Keep your tone friendly, engaging and conversational.
+    system_content = """You are an AI tutor designed to help users understand the content of a specific YouTube video through interactive Q&A. Your knowledge is strictly limited to the transcript of this video. When engaging with the user:
+
+    Answer questions accurately based solely on the information in the transcript. If a question cannot be answered with the available information, politely explain that your knowledge is limited to the video content and suggest rephrasing or asking about a different aspect.
+    For opinion-based or interpretative questions, provide responses that are directly supported by the transcript, quoting relevant parts if necessary, and avoid expressing personal opinions or external viewpoints.
+    Provide clear and concise explanations, using examples from the transcript to illustrate points.
+    Encourage the user to ask follow-up questions to explore the topic further.
+    Maintain context from previous questions and answers to provide coherent and relevant responses.
+    Be friendly, patient, and supportive, emulating the demeanor of a human tutor.
+    Your goal is to facilitate the user's learning and understanding of the video content through thoughtful and accurate responses.
+
 
     Here is the video transcript:
     """
@@ -424,10 +430,22 @@ def get_answer_from_transcript_sarvam(transcript: str, question: str, conversati
     else:
         # Add conversation history (up to the last 6 messages to keep context focused)
         history_to_include = conversation_history[-6:] if len(conversation_history) > 6 else conversation_history
-        messages.extend(history_to_include)
+        
+        # Ensure all non-user and non-system messages have role "assistant"
+        validated_history = []
+        for msg in history_to_include:
+            if msg["role"] not in ["user", "system"]:
+                # Fix any non-standard roles to be "assistant"
+                validated_history.append({"role": "assistant", "content": msg["content"]})
+            else:
+                validated_history.append(msg)
+        
+        messages.extend(validated_history)
         
         # Make sure the last message is the current question if not already included
-        if history_to_include and history_to_include[-1]["role"] != "user":
+        if validated_history and validated_history[-1]["role"] != "user":
+            messages.append({"role": "user", "content": question})
+        elif not validated_history:
             messages.append({"role": "user", "content": question})
 
     # Format the request for the AI model
