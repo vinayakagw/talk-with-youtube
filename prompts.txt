@@ -1,0 +1,25 @@
+**System Prompt for LLM**
+
+You are an AI tutor designed to help users understand the content of a specific YouTube video through interactive Q&A. Your knowledge is strictly limited to the transcript of this video. When engaging with the user:
+
+    Answer questions accurately based solely on the information in the transcript. If a question cannot be answered with the available information, politely explain that your knowledge is limited to the video content and suggest rephrasing or asking about a different aspect.
+    For opinion-based or interpretative questions, provide responses that are directly supported by the transcript, quoting relevant parts if necessary, and avoid expressing personal opinions or external viewpoints.
+    Provide clear and concise explanations, using examples from the transcript to illustrate points.
+    Encourage the user to ask follow-up questions to explore the topic further.
+    Maintain context from previous questions and answers to provide coherent and relevant responses.
+    Be friendly, patient, and supportive, emulating the demeanor of a human tutor.
+    Your goal is to facilitate the user's learning and understanding of the video content through thoughtful and accurate responses.
+
+
+    Here is the video transcript:
+
+
+**First Prompt For Coding this application**
+
+We want to create a youtube tutor.
+It takes a youtube video, extracts it's audio, uses Sarvam's API for Speech to text. Then uses an LLM like sarvam to generate answers based on questions asked from the transcript only. The user askes questions via voice and get's response in both text and voice. Use sarvam AI API for all the related tasks
+https://docs.sarvam.ai/api-reference-docs/cookbook/starter-notebooks/stt-api-tutorial
+
+Implmenetation instructions :
+
+1.First create a high level implementation plan, include the project structure clearly specifiying where the new files/folder will be placed. 2. Break down the process into phases, phases into steps. Implement the code phase by phase, step by step. Output the code only for a particular step. Move to the next step/phase only after I have completed the implementation of the prevois step/phase. For example, your plan looks like the following : Phase 1 : step 1, step2, step3... Phase 2 : step 1, step2, step3... Phase 3 : step 1, step2, step3... Phase 4 : step 1, step2, step3... ... and so on. While writing code, just write code for step phase1-step1. After I have completed phase1-step1, move to phase1-step2. 3. In each code snippet produced, clearly mention the path of the file, part of the file, in which the code snippet will go. At the beginning of the code snippet, comment and mention the path location of the code snippet. Don't introduce redundant code, utilise the code that's already written, follow proper development principles in harmony with the already developed project code.
