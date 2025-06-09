@@ -74,7 +74,7 @@ Talk With YouTube is a web application that allows users to interact with YouTub
     python -m app.main
     ```
 3.  Open your web browser and navigate to:
-    `http://127.0.0.1:5001` (or the port specified in `app/main.py`).
+    `http://127.0.0.1:8080` (or the port specified in `app/main.py`).
 
 ## Project Structure
 

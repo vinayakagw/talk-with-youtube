@@ -269,4 +269,4 @@ if __name__ == '__main__':
         os.makedirs(TTS_OUTPUT_DIR)
     
     # Start the web server
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=8080)
